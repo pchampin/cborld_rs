@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = [
+  "lib",
+  "cli",
+  "test_factory",
+  "test_interop",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Pierre-Antoine Champin <https://champin.net>"]
+license = "W3C"
+repository = "https://github.com/pchampin/cborld_rs"
+
+[workspace.dependencies]
+cborld = { version="=0.1.0", path="lib" }
+cborld_cli = { version="=0.1.0", path="cli" }
+cborld_test_factory = { version="=0.1.0", path="test_factory" }
+cborld_test_interop = { version="=0.1.0", path="test_interop" }

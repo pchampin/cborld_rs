@@ -1,0 +1,15 @@
+stop_on_err=false
+
+[[tools]]
+name="tool1" # arbitrary name to display in test results
+cmd="/TODO/path/to/tool1"
+
+[[tools]]
+name="tool2" # arbitrary name to display in test results
+cmd="/TODO/path/to/tool2"
+
+# add as many tools as possible
+
+[http_server]
+cmd="httplz" # command to run a local HTTP server
+base="http://localhost:8000/" # URL served by the command above
