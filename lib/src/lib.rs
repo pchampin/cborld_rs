@@ -1246,7 +1246,7 @@ impl UrlSubCodec {
             UrnUuid => "urn:uuid:",
             Data => "data:",
             DidV1Nym => "did:v1:nym:",
-            DidKey => "did:key",
+            DidKey => "did:key:",
         }
     }
 
@@ -1343,8 +1343,29 @@ pub fn create_url_encoder(
                 ])))
             }
         }
-        DidV1Nym => todo!(),
-        DidKey => todo!(),
+        DidV1Nym | DidKey => {
+            // §6.5.3.9.1 <https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/#create-base58-did-url-encoder>
+            // step 1
+            let suffix = &value_to_encode[prefix.len()..];
+            // step 2
+            let mut parts = suffix.splitn(2, '#');
+            let authority = parts.next().unwrap();
+            let fragment = parts.next();
+            // step 3
+            let authority_encoded = multibase_base58_to_cbor_token(authority);
+            // step 4-5
+            let id = GcValue::new_int(id as u64);
+            if let Some(fragment) = fragment {
+                let fragment_encoded = multibase_base58_to_cbor_token(fragment);
+                Ok(Some(GcValue::new_array([
+                    id,
+                    authority_encoded,
+                    fragment_encoded,
+                ])))
+            } else {
+                Ok(Some(GcValue::new_array([id, authority_encoded])))
+            }
+        }
     }
 }
 
@@ -1417,7 +1438,24 @@ pub fn create_url_decoder(
                     }
                 }
                 // step 2.6
-                DidV1Nym | DidKey => todo!(),
+                DidV1Nym | DidKey => {
+                    // §6.5.3.9.4  <https://www.w3.org/TR/cbor-ld/#create-base58-did-url-decoder>
+                    let prefix = prefix_id.prefix();
+                    match rest {
+                        [authority] => cbor_token_to_multibase_base58(authority)
+                            .map(|authority| format!("{prefix}{authority}").into()),
+                        [authority, fragment] => {
+                            if let Some(authority) = cbor_token_to_multibase_base58(authority)
+                                && let Some(fragment) = cbor_token_to_multibase_base58(fragment)
+                            {
+                                Some(format!("{prefix}{authority}#{fragment}").into())
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    }
+                }
             }
         }
         // step 3
@@ -1428,6 +1466,25 @@ pub fn create_url_decoder(
         // step 4
         _ => None,
     })
+}
+
+/// §6.5.3.9.3 <https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/#multibase-base58-to-cbor-token>
+pub fn multibase_base58_to_cbor_token(s: &str) -> GcValue {
+    if s.starts_with('z')
+        && let Some(decoded) = b58::decode(&s[1..]).ok()
+    {
+        GcValue::new_bytes(decoded)
+    } else {
+        GcValue::new_text(s)
+    }
+}
+
+fn cbor_token_to_multibase_base58(token: &GcValue) -> Option<Cow<'_, str>> {
+    match token {
+        GcValue::Bytes(bytes) => Some(Cow::from(format!("z{}", b58::encode(bytes)))),
+        GcValue::Text(text) => Some(Cow::from(text.as_ref())),
+        _ => None,
+    }
 }
 
 /// §6.6.1 <https://www.w3.org/TR/cbor-ld-10/#get-cbor-tag-structure-algorithm>

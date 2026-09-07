@@ -1,0 +1,7 @@
+[default]
+extend-ignore-identifiers-re = [
+]
+extend-ignore-re = [
+  "uPcLIbKr4NG5mQWidS6N6fOlBpKtSp1jIzF9AVn7bHe9lbd",
+]
+

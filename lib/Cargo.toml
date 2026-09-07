@@ -18,6 +18,7 @@ gc_value = "0.1"
 uuid = "1"
 strum = { version = "0.28", features = ["derive"] }
 data-encoding = "2"
+b58 = "0.1.2"
 
 [build-dependencies]
 cborld_test_factory.workspace = true
