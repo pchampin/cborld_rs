@@ -13,8 +13,9 @@ use strum::{EnumIter, FromRepr, IntoEnumIterator};
 use uuid::Uuid;
 
 // algos ====================================================================
+// reference: https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/
 
-/// §5.1.1 <https://www.w3.org/TR/cbor-ld-10/#json-ld-to-cbor-ld-encoding-algorithm>
+/// §6.1.1 <https://www.w3.org/TR/cbor-ld-10/#json-ld-to-cbor-ld-encoding-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of returning `cborldBytes`, we write it directly into `writer`
@@ -51,7 +52,7 @@ pub fn jsonld_to_cborld<W: Write>(
     Ok(())
 }
 
-/// §5.1.2 <https://www.w3.org/TR/cbor-ld-10/#cbor-ld-to-json-ld-decoding-algorithm>
+/// §6.1.2 <https://www.w3.org/TR/cbor-ld-10/#cbor-ld-to-json-ld-decoding-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - it takes an extra parameter context_cache
@@ -90,7 +91,7 @@ pub fn cborld_to_jsonld<R: Read>(
 }
 
 #[allow(dead_code)]
-/// §5.2.1 <https://www.w3.org/TR/cbor-ld-10/#initialize-conversion-algorithm>
+/// §6.2.1 <https://www.w3.org/TR/cbor-ld-10/#initialize-conversion-algorithm>
 ///
 /// NB: this algorithm is actually integrated in [`State::new`],
 /// so this function is a noop, and is actually not used in this implementation.
@@ -98,7 +99,7 @@ pub fn initialize_conversion(state: State) -> State {
     state
 }
 
-/// §5.2.2 <https://www.w3.org/TR/cbor-ld-10/#convert-document-algorithm>
+/// §6.2.2 <https://www.w3.org/TR/cbor-ld-10/#convert-document-algorithm>
 ///
 ///
 /// NB: the signature does not match the current signature from the spec (2026-07-02)
@@ -127,7 +128,7 @@ pub fn convert_document(mut state: State, input_document: GcValue) -> Result<GcV
     }
 }
 
-/// §5.2.3 <https://www.w3.org/TR/cbor-ld/#general-conversion-algorithm>
+/// §6.2.3 <https://www.w3.org/TR/cbor-ld/#general-conversion-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -212,7 +213,7 @@ pub fn general_conversion(
     Ok(GcValue::collect_map(output))
 }
 
-/// §5.2.4 <https://www.w3.org/TR/cbor-ld/#convert-value-algorithm>
+/// §6.2.4 <https://www.w3.org/TR/cbor-ld/#convert-value-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -257,7 +258,7 @@ pub fn convert_value(
     })
 }
 
-/// §5.2.5.1 <https://www.w3.org/TR/cbor-ld/#convert-contexts-for-compression-algorithm>
+/// §6.2.5.1 <https://www.w3.org/TR/cbor-ld/#convert-contexts-for-compression-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -308,7 +309,7 @@ pub fn convert_context_for_compression(
     Ok((output, active_context))
 }
 
-/// §5.2.5.2 <https://www.w3.org/TR/cbor-ld/#convert-value-for-compression-algorithm>
+/// §6.2.5.2 <https://www.w3.org/TR/cbor-ld/#convert-value-for-compression-algorithm>
 ///
 pub fn convert_value_for_compression(
     state: &State,
@@ -333,7 +334,7 @@ pub fn convert_value_for_compression(
     }
 }
 
-/// §5.2.5.3 <https://www.w3.org/TR/cbor-ld/#get-input-entries-for-compression-algorithm>
+/// §6.2.5.3 <https://www.w3.org/TR/cbor-ld/#get-input-entries-for-compression-algorithm>
 ///
 /// Pre-condition: `input` comes from a JSON document, so all its keys are excpeted to be strings
 pub fn get_input_entries_for_compression<'a>(
@@ -380,7 +381,7 @@ pub fn get_input_entries_for_compression<'a>(
         .collect()
 }
 
-/// §5.2.5.4 <https://www.w3.org/TR/cbor-ld/#get-object-types-for-compression-algorithm>
+/// §6.2.5.4 <https://www.w3.org/TR/cbor-ld/#get-object-types-for-compression-algorithm>
 ///
 pub fn get_object_types_for_compression(
     active_context: &ActiveContext,
@@ -401,7 +402,7 @@ pub fn get_object_types_for_compression(
         .collect()
 }
 
-/// §5.2.6.1 <https://www.w3.org/TR/cbor-ld/#convert-contexts-for-decompression-algorithm>
+/// §6.2.6.1 <https://www.w3.org/TR/cbor-ld/#convert-contexts-for-decompression-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -456,7 +457,7 @@ pub fn convert_context_for_decompression(
     Ok((output, active_context))
 }
 
-/// §5.2.6.2 <https://www.w3.org/TR/cbor-ld/#convert-value-for-decompression-algorithm>
+/// §6.2.6.2 <https://www.w3.org/TR/cbor-ld/#convert-value-for-decompression-algorithm>
 ///
 pub fn convert_value_for_decompression(
     state: &State,
@@ -479,7 +480,7 @@ pub fn convert_value_for_decompression(
     }
 }
 
-/// §5.2.6.3 <https://www.w3.org/TR/cbor-ld/#get-input-entries-for-decompression-algorithm>
+/// §6.2.6.3 <https://www.w3.org/TR/cbor-ld/#get-input-entries-for-decompression-algorithm>
 ///
 pub fn get_input_entries_for_decompression<'a>(
     state: &State,
@@ -533,7 +534,7 @@ pub fn get_input_entries_for_decompression<'a>(
     Ok(entries)
 }
 
-/// §5.2.6.4 <https://www.w3.org/TR/cbor-ld/#get-object-types-for-decompression-algorithm>
+/// §6.2.6.4 <https://www.w3.org/TR/cbor-ld/#get-object-types-for-decompression-algorithm>
 ///
 /// This implementation currently differs from the spec,
 /// applying my proposal in <https://github.com/w3c/cbor-ld/issues/107>
@@ -609,7 +610,7 @@ pub fn get_object_types_for_decompression(
     // step 3 is implicit (returning the result of collect above)
 }
 
-/// §5.3.1 <https://www.w3.org/TR/cbor-ld/#initialize-active-context-algorithm>
+/// §6.3.1 <https://www.w3.org/TR/cbor-ld/#initialize-active-context-algorithm>
 ///
 pub fn initialize_active_context(
     previous_active_context: Option<Rc<ActiveContext>>,
@@ -630,7 +631,7 @@ pub fn initialize_active_context(
     })
 }
 
-/// §5.3.2 <https://www.w3.org/TR/cbor-ld/#apply-embedded-contexts-algorithm>
+/// §6.3.2 <https://www.w3.org/TR/cbor-ld/#apply-embedded-contexts-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -658,7 +659,7 @@ pub fn apply_embedded_contexts(
     ))
 }
 
-/// §5.3.3 <https://www.w3.org/TR/cbor-ld/#apply-property-scoped-contexts-algorithm>
+/// §6.3.3 <https://www.w3.org/TR/cbor-ld/#apply-property-scoped-contexts-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -688,7 +689,7 @@ pub fn apply_property_scoped_contexts(
     Ok(initialize_active_context(Some(active_context), term_map))
 }
 
-/// §5.3.4 <https://www.w3.org/TR/cbor-ld/#apply-type-scoped-contexts-algorithm>
+/// §6.3.4 <https://www.w3.org/TR/cbor-ld/#apply-type-scoped-contexts-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -725,7 +726,7 @@ pub fn apply_type_scoped_contexts(
     ))
 }
 
-/// §5.3.5 <https://www.w3.org/TR/cbor-ld/#update-term-map-algorithm>
+/// §6.3.5 <https://www.w3.org/TR/cbor-ld/#update-term-map-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -804,7 +805,7 @@ pub fn update_term_map(
     Ok(active_term_map.into_owned())
 }
 
-/// §5.3.6 <https://www.w3.org/TR/cbor-ld/#revert-term-map-algorithm>
+/// §6.3.6 <https://www.w3.org/TR/cbor-ld/#revert-term-map-algorithm>
 ///
 pub fn revert_term_map(active_context: &ActiveContext) -> TermMap {
     // step 1
@@ -848,7 +849,7 @@ pub fn revert_term_map(active_context: &ActiveContext) -> TermMap {
 }
 
 #[allow(dead_code)]
-/// §5.4.1 <https://www.w3.org/TR/cbor-ld-10/#initialize-context-loader-algorithm>
+/// §6.4.1 <https://www.w3.org/TR/cbor-ld-10/#initialize-context-loader-algorithm>
 ///
 /// NB: this algorithm is actually integrated in [`State::new`],
 /// so this function is a noop, and is actually not used in this implementation.
@@ -856,7 +857,7 @@ pub fn initialize_context_loader(state: State) -> State {
     state
 }
 
-/// §5.4.2 <https://www.w3.org/TR/cbor-ld/#load-context-algorithm>
+/// §6.4.2 <https://www.w3.org/TR/cbor-ld/#load-context-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -884,7 +885,7 @@ pub fn load_context(state: &mut State, context_identifier: &GcValue) -> Result<R
     add_context(state, context, context_url)
 }
 
-/// §5.4.3 <https://www.w3.org/TR/cbor-ld/#add-context-algorithm>
+/// §6.4.3 <https://www.w3.org/TR/cbor-ld/#add-context-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - `state` is passed as a mutable reference, rather than returned back
@@ -979,7 +980,7 @@ pub fn add_context(
     Ok(entry)
 }
 
-/// §5.5.1.1 <https://www.w3.org/TR/cbor-ld/#create-context-encoder>
+/// §6.5.1.1 <https://www.w3.org/TR/cbor-ld/#create-context-encoder>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - it returns "an empty map" (i.e. None) if type_table.context is undefined
@@ -1000,7 +1001,7 @@ pub fn create_context_encoder<'a>(
     })
 }
 
-/// §5.5.1.2 <https://www.w3.org/TR/cbor-ld/#encode-context>
+/// §6.5.1.2 <https://www.w3.org/TR/cbor-ld/#encode-context>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// it does not produce binary data, but the GcValue that will be serialized as expected by the spec
@@ -1012,7 +1013,7 @@ pub fn encode_context(encoder_data: ContextEncoder<'_>) -> GcValue {
     }
 }
 
-/// §5.5.1.3 <https://www.w3.org/TR/cbor-ld/#create-context-decoder>
+/// §6.5.1.3 <https://www.w3.org/TR/cbor-ld/#create-context-decoder>
 ///
 pub fn create_context_decoder<'a>(reverse_type_table: &'a ReverseTypeTable) -> ContextDecoder<'a> {
     let reverse_context_table = reverse_type_table.get("context");
@@ -1021,7 +1022,7 @@ pub fn create_context_decoder<'a>(reverse_type_table: &'a ReverseTypeTable) -> C
     }
 }
 
-/// §5.5.1.4 <https://www.w3.org/TR/cbor-ld/#decode-context>
+/// §6.5.1.4 <https://www.w3.org/TR/cbor-ld/#decode-context>
 ///
 pub fn decode_context(decoder_data: &ContextDecoder<'_>, value: &GcValue) -> Result<GcValue> {
     let GcValue::Int(n) = value else {
@@ -1040,7 +1041,7 @@ pub fn decode_context(decoder_data: &ContextDecoder<'_>, value: &GcValue) -> Res
     }
 }
 
-/// §5.5.2.1 <https://www.w3.org/TR/cbor-ld/#create-value-encoder>
+/// §6.5.2.1 <https://www.w3.org/TR/cbor-ld/#create-value-encoder>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of returning a map `value_encoder`, it returns the encoded value directly
@@ -1125,7 +1126,7 @@ pub fn create_value_encoder(
     }
 }
 
-/// §5.5.2.2 <https://www.w3.org/TR/cbor-ld/#encode-value>
+/// §6.5.2.2 <https://www.w3.org/TR/cbor-ld/#encode-value>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of a map, it expects the values of the map directly
@@ -1140,7 +1141,7 @@ pub fn encode_value(int_value: i128, include_sign: bool, convert_to_bytes: bool)
     }
 }
 
-/// §5.5.2.3 <https://www.w3.org/TR/cbor-ld/#create-value-decoder>
+/// §6.5.2.3 <https://www.w3.org/TR/cbor-ld/#create-value-decoder>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of returning a map `decoderData`, it returns the decoded value directly
@@ -1223,7 +1224,7 @@ pub fn create_value_decoder(
     }
 }
 
-// § 5.5.3.1 <https://www.w3.org/TR/cbor-ld-10/#url-prefix-table>
+// §6.5.3.1 <https://www.w3.org/TR/cbor-ld-10/#url-prefix-table>
 // encoded slightly differently
 #[repr(u64)]
 #[derive(Clone, Copy, Debug, EnumIter, FromRepr)]
@@ -1260,7 +1261,7 @@ impl UrlSubCodec {
     }
 }
 
-/// § 5.5.3.2 <https://www.w3.org/TR/cbor-ld-10/#create-url-encoder>
+/// §6.5.3.2 <https://www.w3.org/TR/cbor-ld-10/#create-url-encoder>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of returning a map `value_encoder`, it returns the encoded value directly
@@ -1294,7 +1295,7 @@ pub fn create_url_encoder(
     use UrlSubCodec::*;
     match id {
         Http | Https =>
-        // § 5.5.3.6.1 <https://www.w3.org/TR/cbor-ld-10/#create-http-url-encoder>
+        // §6.5.3.6.1 <https://www.w3.org/TR/cbor-ld-10/#create-http-url-encoder>
         {
             Ok(Some(GcValue::new_array([
                 GcValue::new_int(id as u64),
@@ -1302,7 +1303,7 @@ pub fn create_url_encoder(
             ])))
         }
         UrnUuid => {
-            // § 5.5.3.7.1 <https://www.w3.org/TR/cbor-ld-10/#create-uuid-urn-encoder>
+            // §6.5.3.7.1 <https://www.w3.org/TR/cbor-ld-10/#create-uuid-urn-encoder>
             let rest = &value_to_encode[prefix.len()..];
             let suffix = if rest.bytes().all(|b| !b.is_ascii_uppercase()) {
                 // NB: do *not* use b.is_ascii_lowercase() above, as digits and dash are *not* lowercase
@@ -1317,7 +1318,7 @@ pub fn create_url_encoder(
             ])))
         }
         Data => {
-            // § 5.5.3.8.1 <https://www.w3.org/TR/cbor-ld-10/#create-data-url-encoder>
+            // §6.5.3.8.1 <https://www.w3.org/TR/cbor-ld-10/#create-data-url-encoder>
             let rest = &value_to_encode[prefix.len()..];
             if let Some((mediatype, data_bytes)) = || -> Option<_> {
                 let pos = rest.rfind(";base64,")?;
@@ -1347,7 +1348,7 @@ pub fn create_url_encoder(
     }
 }
 
-/// § 5.5.3.4 <https://www.w3.org/TR/cbor-ld-10/#create-url-decoder>
+/// §6.5.3.4 <https://www.w3.org/TR/cbor-ld-10/#create-url-decoder>
 ///
 /// This implementations differs from the algorithm in the spec:
 /// - instead of returning a decoder object, it returns the decoded value directly
@@ -1376,7 +1377,7 @@ pub fn create_url_decoder(
             match prefix_id {
                 // step 2.3
                 Http | Https => {
-                    // § 5.5.3.6.3 <https://www.w3.org/TR/cbor-ld-10/#create-http-url-decoder>
+                    // §6.5.3.6.3 <https://www.w3.org/TR/cbor-ld-10/#create-http-url-decoder>
                     // step 1
                     if let [GcValue::Text(suffix)] = rest {
                         let prefix = prefix_id.prefix();
@@ -1388,7 +1389,7 @@ pub fn create_url_decoder(
                 }
                 // step 2.4
                 UrnUuid => {
-                    // § 5.5.3.7.3 <https://www.w3.org/TR/cbor-ld/#create-uuid-urn-decoder>
+                    // §6.5.3.7.3 <https://www.w3.org/TR/cbor-ld/#create-uuid-urn-decoder>
                     match rest {
                         // step 1
                         [GcValue::Text(suffix)] => {
@@ -1404,7 +1405,7 @@ pub fn create_url_decoder(
                 }
                 // step 2.5
                 Data => {
-                    // § 5.5.3.8.3 <https://www.w3.org/TR/cbor-ld/#create-data-url-decoder>
+                    // §6.5.3.8.3 <https://www.w3.org/TR/cbor-ld/#create-data-url-decoder>
                     let prefix = prefix_id.prefix();
                     match rest {
                         [GcValue::Text(rest)] => Some(format!("{prefix}{rest}").into()),
@@ -1429,7 +1430,7 @@ pub fn create_url_decoder(
     })
 }
 
-/// §5.6.1 <https://www.w3.org/TR/cbor-ld-10/#get-cbor-tag-structure-algorithm>
+/// §6.6.1 <https://www.w3.org/TR/cbor-ld-10/#get-cbor-tag-structure-algorithm>
 ///
 ///
 /// Instead of returning `prefix`, we write it into `writer`
@@ -1442,7 +1443,7 @@ pub fn get_cbor_tag_structure<W: Write>(
     Ok(())
 }
 
-/// §5.6.2 <https://www.w3.org/TR/cbor-ld-10/#get-registry-entry-id-algorithm>
+/// §6.6.2 <https://www.w3.org/TR/cbor-ld-10/#get-registry-entry-id-algorithm>
 ///
 pub fn get_registry_entry_id<R: Read>(
     mut cborld_bytes: R,
