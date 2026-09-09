@@ -1,7 +1,7 @@
 CBOR-LD implementation in Rust
 ==============================
 
-This project aims to implement the [CBOR-LD] specification as failtfully as possible,
+This project aims to implement the [CBOR-LD] specification as faithfully as possible,
 both in order to test the specification itself,
 and to provide a compliant implementation to the Rust ecosystem.
 
