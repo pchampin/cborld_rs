@@ -7,7 +7,9 @@ use std::{
     sync::{Arc, LazyLock},
 };
 
+use chrono::{DateTime, NaiveDate};
 use gc_value::{GcValue, Map as GcMap};
+use regex::Regex;
 use serde_json::Value as JsonValue;
 use strum::{EnumIter, FromRepr, IntoEnumIterator};
 use uuid::Uuid;
@@ -1098,6 +1100,7 @@ pub fn create_value_encoder(
     let value_encoder = if state.codecs.contains(table_type) {
         match table_type {
             "url" => create_url_encoder(state, term_info, value_to_encode)?,
+            "http://www.w3.org/2001/XMLSchema#date" => create_xsd_date_encoder(value_to_encode)?,
             _ => return Err(Error::UnknownCodec),
         }
     } else {
@@ -1206,6 +1209,7 @@ pub fn create_value_decoder(
     let decoder_data = if state.codecs.contains(table_type) {
         match table_type {
             "url" => create_url_decoder(state, term_info, value_to_decode)?,
+            "http://www.w3.org/2001/XMLSchema#date" => create_xsd_date_decoder(value_to_decode)?,
             _ => return Err(Error::UnknownCodec),
         }
     } else {
@@ -1487,6 +1491,84 @@ fn cbor_token_to_multibase_base58(token: &GcValue) -> Option<Cow<'_, str>> {
     }
 }
 
+/// §6.5.4.1 <https://www.w3.org/TR/cbor-ld-10/#create-xsd-date-encoder>
+///
+/// This implementations differs from the algorithm in the spec:
+/// - raise an error if value is not a String (not handled currently (2026-09-18) in the spec)
+/// - instead of returning a map `value_encoder`, it returns the encoded value directly
+pub fn create_xsd_date_encoder(value: &GcValue) -> Result<Option<GcValue>> {
+    let Some(value_str) = value.as_text() else {
+        return Err(Error::UnsupportedJsonType);
+    };
+    // step 1
+    if value_str.contains('T') {
+        return Ok(None);
+    };
+    // step 2-3
+    let Some(ms_since_epoch) = parse_xsd_date(value_str) else {
+        return Ok(None);
+    };
+    // § 6.5.4.3
+    // step 1
+    let seconds_since_epoch = ms_since_epoch / 1000;
+    // step 2-3
+    let expected_date = serialize_xsd_date(seconds_since_epoch).unwrap();
+    if expected_date != value_str.as_ref() {
+        // step 4
+        Ok(Some(value.clone()))
+    } else {
+        // step 5-6
+        Ok(Some(seconds_since_epoch.into()))
+    }
+}
+
+/// Parse an xsd:date lexical value as an offset since EPOCH,
+/// assuming T00:00:00Z as a suffix.
+/// If the lexical value contains a time zone (allowed by xsd:date),
+/// then return None (this can not be compressed).
+fn parse_xsd_date(s: &str) -> Option<i64> {
+    static RE: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+            r"(?x)
+            ^ (-)?(\d{4,}) - (\d{2}) - (\d{2}) $
+        ",
+        )
+        .unwrap()
+    });
+
+    let c = RE.captures(s)?;
+    let sign: i32 = c.get(1).map(|_| -1).unwrap_or(1);
+    let year: i32 = c.get(2).unwrap().as_str().parse().unwrap();
+    let month: u32 = c.get(3).unwrap().as_str().parse().unwrap();
+    let day: u32 = c.get(4).unwrap().as_str().parse().unwrap();
+    let datetime = NaiveDate::from_ymd_opt(sign * year, month, day)?
+        .and_hms_opt(0, 0, 0)?
+        .and_utc();
+    Some(datetime.timestamp_millis())
+}
+
+/// Serialize an offset since EPOCH in to an xsd:date without time zone
+fn serialize_xsd_date(seconds_since_epoch: i64) -> Result<GcValue> {
+    let iso8601 = DateTime::from_timestamp_secs(seconds_since_epoch)
+        .ok_or_else(|| Error::OutOfRangeDate(seconds_since_epoch as i128))?
+        .to_rfc3339();
+    let date = iso8601.split('T').next().unwrap();
+    Ok(date.strip_prefix('+').unwrap_or(date).into())
+}
+
+/// §6.5.4.3 <https://www.w3.org/TR/cbor-ld-10/#create-xsd-date-decoder>
+///
+/// This implementations differs from the algorithm in the spec:
+/// - instead of returning a decoder object, it returns the decoded value directly
+pub fn create_xsd_date_decoder(value_to_decode: &GcValue) -> Result<Option<GcValue>> {
+    let Some(n) = value_to_decode.as_int() else {
+        return Ok(None);
+    };
+    // §6.5.4.4
+    let seconds_since_epoch: i64 = n.try_into().map_err(|_| Error::OutOfRangeDate(n))?;
+    serialize_xsd_date(seconds_since_epoch).map(Some)
+}
+
 /// §6.6.1 <https://www.w3.org/TR/cbor-ld-10/#get-cbor-tag-structure-algorithm>
 ///
 ///
@@ -1547,7 +1629,10 @@ pub fn get_registry_entry<'a>(registry_entry_id: RegistryEntryId) -> Option<&'a 
                 type_tables: BTreeMap::new(),
                 processing_model: ProcessingModel {
                     compression: true,
-                    codecs: BTreeSet::from(["url".to_string()]),
+                    codecs: BTreeSet::from([
+                        "http://www.w3.org/2001/XMLSchema#date".to_string(),
+                        "url".to_string(),
+                    ]),
                 },
                 provisional: false,
             },
@@ -1900,6 +1985,8 @@ pub enum Error {
     InvalidPayloadStructure,
     #[error("ERR_NON_CBOR_LD_TAG")]
     NonCborLdTag,
+    #[error("X_OUT_OF_RANGE_DATE")]
+    OutOfRangeDate(i128),
     #[error("ERR_PROTECTED_TERM_REDEFINITION")]
     ProtectedTermRedefinition(Arc<str>),
     #[error("ERR_UNKNOWN_CBORLD_TERM")]

@@ -38,6 +38,10 @@ impl TestFactory {
             "ids": {
               "@id": "x:ids",
               "@container": "@id"
+            },
+            "xsdate": {
+              "@id": "x:xdate",
+              "@type": "http://www.w3.org/2001/XMLSchema#date"
             }
         }))
         .unwrap();
@@ -48,6 +52,7 @@ impl TestFactory {
             ("lbl", 106),
             ("lst", 108),
             ("p", 110),
+            ("xsdate", 112),
         ]);
 
         Self {
@@ -252,13 +257,55 @@ impl TestFactory {
                     b"\xf8\x1d\x4f\xae\x7d\xec\x11\xd0\xa7\x65\x00\xa0\xc9\x1e\x6b\xf6".into(),
                 ]),
             ),
+            (
+                "xsd_date",
+                "xsdate",
+                json!("2026-09-18"),
+                1789689600.into(),
+            ),
+            (
+                "xsd_date_big",
+                "xsdate",
+                json!("10000-02-03"),
+                253405152000_i64.into(),
+            ),
+            (
+                "xsd_date_neg",
+                "xsdate",
+                json!("-2026-09-18"),
+                (-126079113600_i64).into(),
+            ),
+            (
+                "xsd_date_with_timezone",
+                "xsdate",
+                json!("2026-09-18Z"),
+                "2026-09-18Z".into(),
+            ),
+            (
+                "xsd_date_invalid",
+                "xsdate",
+                json!("foobar"),
+                "foobar".into(),
+            ),
+            (
+                "xsd_date_plural",
+                "xsdate",
+                json!(["2026-09-18", "1955-06-08", "foobar"]),
+                GcValue::new_array([
+                1789689600.into(),
+                (-459734400).into(),
+                "foobar".into(),
+                ]),
+            ),
         ];
 
         let mut paths = Vec::with_capacity(unit_test_data.len() * 3);
         paths.push(self.make_empty()?);
 
         for (name, key, json, cbor) in &unit_test_data {
-            paths.push(self.make_expanded(name, key, json, cbor)?);
+            if *key != "xsdate" {
+                paths.push(self.make_expanded(name, key, json, cbor)?);
+            }
             paths.push(self.make_inline(name, key, json, cbor)?);
             paths.push(self.make_compact(name, key, json, cbor)?);
         }
