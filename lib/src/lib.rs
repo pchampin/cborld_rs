@@ -13,7 +13,7 @@ use strum::{EnumIter, FromRepr, IntoEnumIterator};
 use uuid::Uuid;
 
 // algos ====================================================================
-// reference: https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/
+// reference: https://www.w3.org/TR/2026/WD-cbor-ld-10-20260916/
 
 /// §6.1.1 <https://www.w3.org/TR/cbor-ld-10/#json-ld-to-cbor-ld-encoding-algorithm>
 ///
@@ -1272,7 +1272,7 @@ pub fn create_url_encoder(
 ) -> Result<Option<GcValue>> {
     // step 1
     let Some(value_to_encode) = value_to_encode.as_text() else {
-        return Ok(None);
+        return Err(Error::UnsupportedJsonType);
     };
 
     // steps 2-3
@@ -1344,7 +1344,7 @@ pub fn create_url_encoder(
             }
         }
         DidV1Nym | DidKey => {
-            // §6.5.3.9.1 <https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/#create-base58-did-url-encoder>
+            // §6.5.3.9.1 <https://www.w3.org/TR/cbor-ld-10/#create-base58-did-url-encoder>
             // step 1
             let suffix = &value_to_encode[prefix.len()..];
             // step 2
@@ -1468,7 +1468,7 @@ pub fn create_url_decoder(
     })
 }
 
-/// §6.5.3.9.3 <https://www.w3.org/TR/2026/WD-cbor-ld-10-20260902/#multibase-base58-to-cbor-token>
+/// §6.5.3.9.3 <https://www.w3.org/TR/cbor-ld-10/#multibase-base58-to-cbor-token>
 pub fn multibase_base58_to_cbor_token(s: &str) -> GcValue {
     if s.starts_with('z')
         && let Some(decoded) = b58::decode(&s[1..]).ok()
@@ -1502,6 +1502,8 @@ pub fn get_cbor_tag_structure<W: Write>(
 
 /// §6.6.2 <https://www.w3.org/TR/cbor-ld-10/#get-registry-entry-id-algorithm>
 ///
+/// This implementations differs from the algorithm in the spec:
+/// - directly parse suffix into a map (in the spec, this is done by the caller §6.1.2).
 pub fn get_registry_entry_id<R: Read>(
     mut cborld_bytes: R,
 ) -> Result<(Arc<GcMap>, RegistryEntryId)> {
@@ -1910,6 +1912,8 @@ pub enum Error {
     UnknownCompressedValue,
     #[error("X_ERR_UNSUPPORTED_ENTRY")]
     UnsupportedEntry,
+    #[error("ERR_UNSUPPORTED_JSON_TYPE")]
+    UnsupportedJsonType,
 
     #[error("Reqwest: {0}")]
     Reqwest(
