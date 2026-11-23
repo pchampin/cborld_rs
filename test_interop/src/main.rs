@@ -23,7 +23,7 @@ fn main() -> Result<()> {
         Command::new(&config.http_server.cmd)
             .stdout(Stdio::null())
             .spawn()
-            .with_context(|| format!("spawning HTTP server {}", &config.http_server.cmd))?,
+            .with_context(|| format!("spawning HTTP server {}", config.http_server.cmd))?,
     );
     do_tests(config)?;
     drop(https);
@@ -146,16 +146,16 @@ impl Config {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .with_context(|| format!("spawning {}", &tool.cmd))?;
+            .with_context(|| format!("spawning {}", tool.cmd))?;
         child
             .stdin
             .take()
             .unwrap()
             .write_all(jsonld.as_bytes())
-            .with_context(|| format!("writing JSON-LD to stdin of {}", &tool.cmd))?;
+            .with_context(|| format!("writing JSON-LD to stdin of {}", tool.cmd))?;
         Ok(child
             .wait_with_output()
-            .with_context(|| format!("waiting for completion of {} encode {reg_id}", &tool.cmd))?
+            .with_context(|| format!("waiting for completion of {} encode {reg_id}", tool.cmd))?
             .stdout)
     }
 
@@ -166,20 +166,20 @@ impl Config {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .with_context(|| format!("spawning {}", &tool.cmd))?;
+            .with_context(|| format!("spawning {}", tool.cmd))?;
         child
             .stdin
             .take()
             .unwrap()
             .write_all(cborld)
-            .with_context(|| format!("writing JSON-LD to stdin of {}", &tool.cmd))?;
+            .with_context(|| format!("writing JSON-LD to stdin of {}", tool.cmd))?;
         String::from_utf8(
             child
                 .wait_with_output()
-                .with_context(|| format!("waiting for completion of {} decode", &tool.cmd))?
+                .with_context(|| format!("waiting for completion of {} decode", tool.cmd))?
                 .stdout,
         )
-        .with_context(|| format!("converting to UTF-8 result of {} decode", &tool.cmd))
+        .with_context(|| format!("converting to UTF-8 result of {} decode", tool.cmd))
     }
 }
 
