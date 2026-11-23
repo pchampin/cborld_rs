@@ -15,7 +15,7 @@ use strum::{EnumIter, FromRepr, IntoEnumIterator};
 use uuid::Uuid;
 
 // algos ====================================================================
-// reference: https://www.w3.org/TR/2026/WD-cbor-ld-10-20260916/
+// reference: https://www.w3.org/TR/2026/WD-cbor-ld-10-20261109/
 
 /// §6.1.1 <https://www.w3.org/TR/cbor-ld-10/#json-ld-to-cbor-ld-encoding-algorithm>
 ///
@@ -81,11 +81,11 @@ pub fn cborld_to_jsonld<R: Read>(
         // NB: initialize_conversion_algorithm is managed inside `State::new`.
 
         // step 4.4-4.5
-        let jsonld_document_gc = convert_document(state, GcValue::Map(suffix))?;
+        let jsonld_document_gc = convert_document(state, suffix)?;
         serde_json::to_value(jsonld_document_gc)?
     // step 5
     } else {
-        serde_json::to_value(GcValue::Map(suffix))?
+        serde_json::to_value(suffix)?
     };
 
     // step 6
@@ -537,9 +537,6 @@ pub fn get_input_entries_for_decompression<'a>(
 }
 
 /// §6.2.6.4 <https://www.w3.org/TR/cbor-ld/#get-object-types-for-decompression-algorithm>
-///
-/// This implementation currently differs from the spec,
-/// applying my proposal in <https://github.com/w3c/cbor-ld/issues/107>
 pub fn get_object_types_for_decompression(
     state: &State,
     active_context: &ActiveContext,
@@ -554,7 +551,7 @@ pub fn get_object_types_for_decompression(
             // steps 2.1-2.2 (setting term_id to None instead of term)
             let term_id = state.term_to_id.get(term).copied();
 
-            // steps 2.3-2.7 (with changes suggested in #107)
+            // steps 2.3-2.7
             let Some((value, plural)) = (match &term_id {
                 None => input.get(term).map(|v| (v, false)),
                 Some(n) => {
@@ -1585,10 +1582,10 @@ pub fn get_cbor_tag_structure<W: Write>(
 /// §6.6.2 <https://www.w3.org/TR/cbor-ld-10/#get-registry-entry-id-algorithm>
 ///
 /// This implementations differs from the algorithm in the spec:
-/// - directly parse suffix into a map (in the spec, this is done by the caller §6.1.2).
-pub fn get_registry_entry_id<R: Read>(
-    mut cborld_bytes: R,
-) -> Result<(Arc<GcMap>, RegistryEntryId)> {
+/// - directly parse suffix as CBOR,
+///   and return ERR_INVALID_PAYLOAD_STRUCTURE if it parses to neither map or array
+///   (in the spec, this is done by the caller §6.1.2).
+pub fn get_registry_entry_id<R: Read>(mut cborld_bytes: R) -> Result<(GcValue, RegistryEntryId)> {
     // step 1
     let mut header = [0_u8; 3];
     cborld_bytes.read_exact(&mut header[..])?;
@@ -1600,9 +1597,12 @@ pub fn get_registry_entry_id<R: Read>(
     let GcValue::Array(vec) = item else {
         return Err(Error::InvalidPayloadStructure);
     };
-    let [GcValue::Int(raw_id), GcValue::Map(suffix)] = &vec[..] else {
+    let [GcValue::Int(raw_id), suffix] = &vec[..] else {
         return Err(Error::InvalidPayloadStructure);
     };
+    if !suffix.is_map() && !suffix.is_array() {
+        return Err(Error::InvalidPayloadStructure);
+    }
     let Ok(registry_entry_id): Result<RegistryEntryId, _> = (*raw_id).try_into() else {
         return Err(Error::InvalidPayloadStructure);
     };
